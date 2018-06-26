@@ -6,6 +6,27 @@ L = 20
 T = 10
 epsilon = 0.01
 
+def select(n, uid, B, U, V):
+    ans=[]
+    usercluster=U[uid]
+    userexpectedrating=B[usercluster]
+    while n>0:
+        maxcluster=np.argmax(userexpectedrating)
+        if userexpectedrating[maxcluster] == -1:
+            break
+        userexpectedrating[maxcluster] = -1
+        bestmovies=V[V==maxcluster]
+        while n>0 or len(bestmovies)>0:
+            ans.append(bestmovies[0])
+            mask = np.ones(len(bestmovies), dtype=bool)
+            mask[0] = False
+            bestmovies = bestmovies[mask]
+            n=n-1
+    return ans
+
+
+
+
 def codebook(ST,SV,K,L):
     alliid=np.uniqe(ST[:,1])
     alluid = np.uniqe(ST[:, 0])
