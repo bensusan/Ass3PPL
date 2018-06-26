@@ -17,6 +17,27 @@ B = np.asarray(BList, dtype=np.int)
 V = np.asarray(VList, dtype=np.int)
 U = np.asarray(UList, dtype=np.int)
 
+def select(n, uid, B, U, V):
+    ans=[]
+    usercluster=U[uid]
+    userexpectedrating=B[usercluster]
+    while n>0:
+        maxcluster=np.argmax(userexpectedrating)
+        if userexpectedrating[maxcluster] == -1:
+            break
+        userexpectedrating[maxcluster] = -1
+        bestmovies=V[V==maxcluster]
+        while n>0 or len(bestmovies)>0:
+            ans.append(bestmovies[0])
+            mask = np.ones(len(bestmovies), dtype=bool)
+            mask[0] = False
+            bestmovies = bestmovies[mask]
+            n=n-1
+    return ans
+
+
+
+
 def codebook(ST,SV,K,L):
     alliid=np.unique(ST[:,1])
     alluid = np.unique(ST[:,0])
@@ -52,21 +73,43 @@ def codebook(ST,SV,K,L):
 
 #Line 13
 def updateB(ST,V,U):
-    BSum=np.zeros((K, L),dtype=int)
-    BCount = np.zeros((K, L), dtype=int)
-    for uid,iid,rating in ST:
-        i=U[uid]
-        j=V[iid]
-        BSum[i][j]+=rating
-        BCount[i][j]+=1
-    avagSystem=np.sum(BSum)/np.sum(BCount)
+    #########################
+    Bans = np.ones((K,L),dtype=int)
+    ratings = ST[:, 2]
+    avagSystem = np.mean(ratings)
+    Bans *= avagSystem
+    iids = ST[:, 1]
+    uids = ST[:, 0]
+    ufunc = np.vectorize(lambda uid: U[uid])
+    uids = ufunc(uids)
+
+    vfunc = np.vectorize(lambda iid: V[iid])
+    iids = vfunc(iids)
     for i in range(K):
+        Iiids = (iids == i)
         for j in range(L):
-            if BCount[i][j]==0:
-                BSum[i][j]=avagSystem
-            else:
-                BSum[i][j]=BSum[i][j]/BCount[i][j]
-    return BSum
+            Juids=(uids == j)
+            STAfterAnd=ST[np.logical_and(Iiids, Juids)]
+            if not (STAfterAnd.size == 0) :
+                 Bans[i][j]=np.mean(STAfterAnd)
+    return Bans
+
+    ###########################
+    # BSum = np.zeros((K, L), dtype=int)
+    # BCount = np.zeros((K, L), dtype=int)
+    # for uid,iid,rating in ST:
+    #     i=U[uid]
+    #     j=V[iid]
+    #     BSum[i][j]+=rating
+    #     BCount[i][j]+=1
+    # avagSystem=np.sum(BSum)/np.sum(BCount)
+    # for i in range(K):
+    #     for j in range(L):
+    #         if BCount[i][j]==0:
+    #             BSum[i][j]=avagSystem
+    #         else:
+    #             BSum[i][j]=BSum[i][j]/BCount[i][j]
+    # return BSum
 
 
 #Line 9
@@ -95,6 +138,8 @@ def updateU(K,ST,uid,B,V):
     #TODO
 
 
+
+
 #Line 12
 def updateV(L,ST,iid,B,U):
     item_ids = ST[:, 1]
@@ -119,9 +164,11 @@ def updateV(L,ST,iid,B,U):
 
 #Line 14
 def calculateRMSE(SV,U,V,B):
-    sum=0
-    for uid,iid,rating in SV:
-        sum=sum+((rating-B[U[uid]][V[iid]])**2)
-    return sum
+    nowsum=np.apply_along_axis(lambda col: (B[U[col[0]],V[col[1]]]-col[2])**2, 1, SV)
+    return np.sum(nowsum)
+    # sum=0
+    # for uid,iid,rating in SV:
+    #     sum=sum+((rating-B[U[uid]][V[iid]])**2)
+    # return sum
 
 codebook(ST,[],4,4)
