@@ -1,8 +1,12 @@
-import csv
-
 import numpy as np
 import sys
 import math
+from flask import Flask
+from flask import request
+from flask import jsonify
+app = Flask(__name__)
+
+
 
 K = 20
 L = 20
@@ -214,5 +218,15 @@ ceil = int(math.ceil(data_length*0.8))
 ST = my_data[:floor]
 SV = my_data[ceil:]
 SV = ST
-codebook(ST,SV,20,20)
+#codebook(ST,SV,20,20)
 #select(10,1,[],[],[])
+
+@app.route("/", methods = ['POST'])
+def getRec():
+    n = int(request.form['n'])
+    userid = int(request.form['userid'])
+    #call the select function
+
+
+if __name__ == "__main__":
+    app.run()
