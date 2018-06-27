@@ -8,10 +8,7 @@ app = Flask(__name__)
 
 
 
-K = 20
-L = 20
-T = 4
-epsilon = 0.01
+
 global U_counter
 U_counter = 0
 
@@ -26,7 +23,10 @@ B = np.asarray(BList, dtype=np.int)
 V = np.asarray(VList, dtype=np.int)
 U = np.asarray(UList, dtype=np.int)
 
-def select(n, uid, B, U, V):
+def select(n, uid):
+    V = np.loadtxt(open("V.csv", "rb"), usecols=(0, 1), delimiter=',', skiprows=1)
+    U = np.loadtxt(open("U.csv", "rb"), usecols=(0, 1), delimiter=',', skiprows=1)
+    B = np.loadtxt(open("B.csv", "rb"), usecols=(0, 1), delimiter=',', skiprows=1)
     my_data = np.loadtxt(open("ratings.csv", "rb"), usecols=(0,1),delimiter=',', skiprows=1)
     masked = (my_data[:,0]==uid)
     my_data = my_data[masked]
@@ -54,7 +54,7 @@ def select(n, uid, B, U, V):
 
 
 
-def codebook(ST,SV,K,L):
+def codebook(ST,SV,K,L,T,epsilon):
     alliidST=np.unique(ST[:,1]).astype(int)
     alluidST = np.unique(ST[:,0]).astype(int)
     alliidSV = np.unique(SV[:,1]).astype(int)
@@ -209,14 +209,7 @@ def calculateRMSE(SV,U,V,B):
     # return sum
 
 
-my_data = np.loadtxt("ratings.csv", delimiter=',',usecols=(0,1, 2),skiprows=95000)
 
-np.random.shuffle(my_data)
-data_length = len(my_data)
-floor = int(math.floor(data_length*0.8))
-ceil = int(math.ceil(data_length*0.8))
-ST = my_data[:floor]
-SV = my_data[ceil:]
 SV = ST
 #codebook(ST,SV,20,20)
 #select(10,1,[],[],[])
@@ -227,6 +220,15 @@ def getRec():
     userid = int(request.form['userid'])
     #call the select function
 
+def ExtractCB(ratingFile,K=20,T=10,epsilon=0.01,Uoutput='',Voutput='',Boutput=''):
+    my_data = np.loadtxt("ratings.csv", delimiter=',', usecols=(0, 1, 2), skiprows=95000)
+    np.random.shuffle(my_data)
+    data_length = len(my_data)
+    floor = int(math.floor(data_length * 0.8))
+    ceil = int(math.ceil(data_length * 0.8))
+    ST = my_data[:floor]
+    SV = my_data[ceil:]
+    codebook(ST,SV,K,K,T,epsilon)
 
 if __name__ == "__main__":
     app.run()
